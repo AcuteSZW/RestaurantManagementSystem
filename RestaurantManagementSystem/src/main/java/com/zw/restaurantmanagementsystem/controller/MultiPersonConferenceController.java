@@ -1,7 +1,12 @@
 package com.zw.restaurantmanagementsystem.controller;
 
+import com.zw.restaurantmanagementsystem.service.MultiPersonConferenceService;
 import com.zw.restaurantmanagementsystem.util.ResponseResult;
+import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUser;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,9 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/multiPersonConference")
 public class MultiPersonConferenceController {
+    @Autowired
+    private MultiPersonConferenceService multiPersonConferenceService;
 
     //多人会议注册
-    public ResponseResult<String> register(String username, String password) {
+    @PostMapping("/register")
+    public ResponseResult<String> register(@RequestBody MultiPersonConferenceUser multiPersonConferenceUser) {
         return null;
     }
     //多人会议登录
@@ -36,7 +44,7 @@ public class MultiPersonConferenceController {
     public ResponseResult<String> add(String username, String password) {
         return null;
     }
-    //用户预约会议
+    //用户预约会议时间
     public ResponseResult<String> book(String username, String password) {
         return null;
     }
