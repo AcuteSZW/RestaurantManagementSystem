@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 定义日志输出格式，新增 traceId 支持 -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} [traceId=%X{traceId}] [%thread] %-3level %logger{36} - %msg%n"/>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 初始日志文件路径 -->
+        <file>logs/app.log</file>
+
+        <!-- 滚动策略：基于时间的小时滚动 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 关键修改点：合并日期时间格式 -->
+            <fileNamePattern>logs/app-%d{yyyy-MM-dd_HH}.log</fileNamePattern>
+
+            <!-- 保留最近720小时（30天）的日志 -->
+            <maxHistory>720</maxHistory>
+
+            <!-- 每小时生成新文件 -->
+            <timeUnit>hours</timeUnit>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+
+        <!-- 编码器：定义日志内容格式 -->
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 根日志级别 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+    <!-- 其他日志配置保持不变 -->
+</configuration>
