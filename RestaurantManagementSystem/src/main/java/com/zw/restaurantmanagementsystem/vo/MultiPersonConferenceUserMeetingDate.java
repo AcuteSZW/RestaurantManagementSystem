@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.util.Date;
 
+/**
+ * 会议日期模型
+ */
 @Data
 @TableName("multi_person_conference_user_meeting_date")
 public class MultiPersonConferenceUserMeetingDate {

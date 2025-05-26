@@ -1,6 +1,7 @@
 package com.zw.restaurantmanagementsystem.controller;
 
 import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserDTO;
+import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserMeetingDateDTO;
 import com.zw.restaurantmanagementsystem.service.MultiPersonConferenceService;
 import com.zw.restaurantmanagementsystem.util.ConversionMultiPersonConferenceUserUtil;
 import com.zw.restaurantmanagementsystem.util.ResponseResult;
@@ -57,8 +58,10 @@ public class MultiPersonConferenceController {
     public ResponseResult<String> add(String username, String password) {
         return null;
     }
-    //用户预约会议时间
-    public ResponseResult<String> book(String username, String password) {
-        return null;
+    //用户预约会议日期
+    @PostMapping("/book")
+    public ResponseResult<String> book(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        String book = multiPersonConferenceService.book(multiPersonConferenceUserMeetingDateDTO);
+        return ResponseResult.success(book);
     }
 }

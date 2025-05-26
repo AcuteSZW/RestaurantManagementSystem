@@ -1,5 +1,7 @@
 package com.zw.restaurantmanagementsystem.service;
 
+import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
@@ -8,16 +10,22 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.zw.restaurantmanagementsystem.dao.MultiPersonConferenceUserMapper;
+import com.zw.restaurantmanagementsystem.dao.MultiPersonConferenceUserMeetingDateMapper;
 import com.zw.restaurantmanagementsystem.dto.LoginDTO;
 import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserDTO;
+import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserMeetingDateDTO;
 import com.zw.restaurantmanagementsystem.util.*;
 import com.zw.restaurantmanagementsystem.vo.MailType;
 import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUser;
+import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUserMeetingDate;
 import com.zw.restaurantmanagementsystem.vo.User;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.executor.BatchResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,6 +40,8 @@ public class MultiPersonConferenceService {
     private RedisUtil redisUtil;
     @Autowired
     private MultiPersonConferenceUserMapper multiPersonConferenceUserMapper;
+    @Autowired
+    private MultiPersonConferenceUserMeetingDateMapper meetingDateMapper;
 
     /**
      * 注册
@@ -111,7 +121,28 @@ public class MultiPersonConferenceService {
         return "添加成功";
     }
 
-    public String book(String username, String password) {
+    //用户预约会议日期
+    public String book(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        if (ArrayUtil.isEmpty(multiPersonConferenceUserMeetingDateDTO.getMeetingDates())) {
+            return "请选择日期";
+        }
+        if (StrUtil.isBlank(multiPersonConferenceUserMeetingDateDTO.getUserUuid())){
+            return "请选择用户";
+        }
+        if(multiPersonConferenceUserMeetingDateDTO.getMeetingDates().size() > 1000){
+            return "最多只能选择1000个日期";
+        }
+        //插入数据库
+        List<MultiPersonConferenceUserMeetingDate> meetingDates = multiPersonConferenceUserMeetingDateDTO.getMeetingDates().stream().map(date -> {
+            MultiPersonConferenceUserMeetingDate meetingDate = new MultiPersonConferenceUserMeetingDate();
+            meetingDate.setUserUuid(multiPersonConferenceUserMeetingDateDTO.getUserUuid());
+            meetingDate.setMeetingDate(date);
+            meetingDate.setCreateTime(new Date());
+
+            return meetingDate;
+        }).toList();
+
+        meetingDateMapper.insert(meetingDates);
         return "预定成功";
     }
 
