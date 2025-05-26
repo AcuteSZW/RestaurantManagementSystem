@@ -1,7 +1,12 @@
 package com.zw.restaurantmanagementsystem.vo;
 
+import cn.hutool.core.lang.UUID;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
-import java.util.List;
+import lombok.experimental.Accessors;
+
+import java.sql.Date;
+
 
 /**
  * 多人会议用户
@@ -9,15 +14,35 @@ import java.util.List;
  * @description: 多人会议用户
  */
 @Data
+@Accessors(chain = true) // 支持链式调用
+@TableName("multi_person_conference_user")
 public class MultiPersonConferenceUser {
-    //用户名,用于展示
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    @TableField(value = "uuid", fill = FieldFill.INSERT)
+    private String uuid;
+
     private String username;
-    //密码
+
     private String password;
-    //邮箱，用于登录
+
     private String email;
-    //手机号
+
     private String telephone;
-    //会议日期列表
-    private List<String> dates;
+
+    @TableLogic
+    @TableField(fill = FieldFill.INSERT_UPDATE, select = false)
+    private int isDelete;
+
+    @TableField(fill = FieldFill.INSERT)
+    private Date createTime;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private Date updateTime;
+
+    // 构造函数中初始化 UUID
+    public MultiPersonConferenceUser() {
+        this.uuid = UUID.randomUUID().toString();
+    }
 }

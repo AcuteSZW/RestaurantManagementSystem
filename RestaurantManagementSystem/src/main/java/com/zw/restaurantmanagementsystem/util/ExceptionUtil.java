@@ -18,6 +18,7 @@ public final class ExceptionUtil {
         public static final String PASSWORD_NOT_NULL = "password is not null";
         //password错误
         public static final String PASSWORD_ERROR = "password error";
+        public static final String SEND_TYPE_ERROR = "send error";
     }
 
     // 系统通用异常消息

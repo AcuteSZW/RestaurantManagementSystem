@@ -1,6 +1,8 @@
 package com.zw.restaurantmanagementsystem.controller;
 
+import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserDTO;
 import com.zw.restaurantmanagementsystem.service.MultiPersonConferenceService;
+import com.zw.restaurantmanagementsystem.util.ConversionMultiPersonConferenceUserUtil;
 import com.zw.restaurantmanagementsystem.util.ResponseResult;
 import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUser;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +27,16 @@ public class MultiPersonConferenceController {
 
     //多人会议注册
     @PostMapping("/register")
-    public ResponseResult<String> register(@RequestBody MultiPersonConferenceUser multiPersonConferenceUser) {
-        return null;
+    public ResponseResult<String> register(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
+        MultiPersonConferenceUser multiPersonConferenceUser = ConversionMultiPersonConferenceUserUtil.convertToVo(multiPersonConferenceUserDTO);
+        String registerMessage = multiPersonConferenceService.register(multiPersonConferenceUser);
+        return ResponseResult.success(registerMessage);
+    }
+    //发送邮件
+    @PostMapping("/send-email")
+    public ResponseResult<String> sendEmail(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
+        String message = multiPersonConferenceService.sendEmail(multiPersonConferenceUserDTO);
+        return ResponseResult.success(message);
     }
     //多人会议登录
     public ResponseResult<String> login(String username, String password) {
