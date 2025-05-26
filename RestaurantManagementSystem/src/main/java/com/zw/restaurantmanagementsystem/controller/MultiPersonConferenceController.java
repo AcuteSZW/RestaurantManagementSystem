@@ -39,8 +39,11 @@ public class MultiPersonConferenceController {
         return ResponseResult.success(message);
     }
     //多人会议登录
-    public ResponseResult<String> login(String username, String password) {
-        return null;
+    @PostMapping("/login")
+    public ResponseResult<String> login(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
+        MultiPersonConferenceUser multiPersonConferenceUser = ConversionMultiPersonConferenceUserUtil.convertToVo(multiPersonConferenceUserDTO);
+        String token = multiPersonConferenceService.login(multiPersonConferenceUser);
+        return ResponseResult.success(token);
     }
     //多人会议登出
     public ResponseResult<String> logout(String username) {

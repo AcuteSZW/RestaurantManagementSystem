@@ -1,14 +1,16 @@
 package com.zw.restaurantmanagementsystem.service;
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.mail.MailUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.zw.restaurantmanagementsystem.dao.MultiPersonConferenceUserMapper;
+import com.zw.restaurantmanagementsystem.dto.LoginDTO;
 import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserDTO;
-import com.zw.restaurantmanagementsystem.util.ExceptionUtil;
-import com.zw.restaurantmanagementsystem.util.JwtUtil;
-import com.zw.restaurantmanagementsystem.util.RedisUtil;
+import com.zw.restaurantmanagementsystem.util.*;
 import com.zw.restaurantmanagementsystem.vo.MailType;
 import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUser;
 import com.zw.restaurantmanagementsystem.vo.User;
@@ -62,9 +64,39 @@ public class MultiPersonConferenceService {
         };
     }
 
+    /**
+     * 登录
+     * @param multiPersonConferenceUser
+     * @return
+     */
+    public String login(MultiPersonConferenceUser multiPersonConferenceUser) {
+        //参数校验
+        if (StringUtils.isBlank(multiPersonConferenceUser.getEmail())) {
+            throw new BusinessException(ExceptionUtil.UserMessage.EMAIL_NOT_NULL);
+        }
+        if (StringUtils.isBlank(multiPersonConferenceUser.getPassword())) {
+            throw new BusinessException(ExceptionUtil.UserMessage.PASSWORD_NOT_NULL);
+        }
 
-    public String login(String username, String password) {
-        return "登录成功";
+        // 构建MP查询条件
+        QueryWrapper<MultiPersonConferenceUser> queryWrapper = new QueryWrapper<>();
+        queryWrapper.nested(wq -> wq
+                .eq("email", multiPersonConferenceUser.getEmail())
+                .eq("password", multiPersonConferenceUser.getPassword())
+        );
+
+        // 查询用户
+        MultiPersonConferenceUser dbUser = multiPersonConferenceUserMapper.selectOne(queryWrapper);
+        if (ObjectUtil.isNull(dbUser)) {
+            throw new BusinessException(ExceptionUtil.UserMessage.USER_NOT_FOUND);
+        }
+
+        // 生成JWT
+        String token = jwtUtil.generateToken(dbUser.getUsername());
+        //登录后有一小时的有效期
+        redisUtil.setEx(multiPersonConferenceUser.getEmail(),  token, 60 * 60, TimeUnit.SECONDS);
+
+        return token;
     }
 
     public String logout(String username) {
