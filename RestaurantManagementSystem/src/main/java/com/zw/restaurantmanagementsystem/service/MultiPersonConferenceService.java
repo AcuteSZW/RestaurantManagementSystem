@@ -6,6 +6,8 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.mail.MailUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
@@ -68,8 +70,8 @@ public class MultiPersonConferenceService {
     public String sendEmail(MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
         //判断类型组装邮件内容
         return switch (multiPersonConferenceUserDTO.getSendType()) {
-            case "1" -> sendTypeEmail(multiPersonConferenceUserDTO, MailType.REGISTRATION);
-            case "2" -> sendTypeEmail(multiPersonConferenceUserDTO, MailType.PASSWORD_RESET);
+            case "1" -> sendTypeEmail(multiPersonConferenceUserDTO, MailType.REGISTRATION,"1");
+            case "3" -> sendTypeEmail(multiPersonConferenceUserDTO, MailType.PASSWORD_RESET,"3");
             default -> ExceptionUtil.UserMessage.SEND_TYPE_ERROR;
         };
     }
@@ -79,7 +81,7 @@ public class MultiPersonConferenceService {
      * @param multiPersonConferenceUser
      * @return
      */
-    public String login(MultiPersonConferenceUser multiPersonConferenceUser) {
+    public MultiPersonConferenceUserDTO login(MultiPersonConferenceUser multiPersonConferenceUser,MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
         //参数校验
         if (StringUtils.isBlank(multiPersonConferenceUser.getEmail())) {
             throw new BusinessException(ExceptionUtil.UserMessage.EMAIL_NOT_NULL);
@@ -105,8 +107,13 @@ public class MultiPersonConferenceService {
         String token = jwtUtil.generateToken(dbUser.getUsername());
         //登录后有一小时的有效期
         redisUtil.setEx(multiPersonConferenceUser.getEmail(),  token, 60 * 60, TimeUnit.SECONDS);
+        multiPersonConferenceUserDTO.setToken(token);//设置token
+        multiPersonConferenceUserDTO.setPassword(null);//密码不返回给前端
+        multiPersonConferenceUserDTO.setUsername(dbUser.getUsername());
+        multiPersonConferenceUserDTO.setTelephone(dbUser.getTelephone());
+        multiPersonConferenceUserDTO.setId(dbUser.getId());
 
-        return token;
+        return multiPersonConferenceUserDTO;
     }
 
     public String logout(String username) {
@@ -164,7 +171,7 @@ public class MultiPersonConferenceService {
      * @param user
      * @return
      */
-    private String sendTypeEmail(MultiPersonConferenceUserDTO user, MailType mailType) {
+    private String sendTypeEmail(MultiPersonConferenceUserDTO user, MailType mailType,String type) {
         if (StrUtil.isBlank(user.getEmail())) {
             return "请输入您的电子邮件地址";
         }
@@ -173,9 +180,11 @@ public class MultiPersonConferenceService {
         String email = user.getEmail();
         String subject = mailType.getSubject();
         String content = mailType.getContentTemplate().formatted(code);
-
+//        JSONObject set = JSONUtil.parseObj(user).set("code", code).set("type", type);
+        //创建一个json对象里面包含code和type
+        JSONObject set = JSONUtil.createObj().set("code", code).set("type", type);
         // 存储到 Redis
-        redisUtil.setEx(email, code, 5, TimeUnit.MINUTES);
+        redisUtil.setEx(email, set, 5, TimeUnit.MINUTES);
 
         // 发送邮件
         MailUtil.send(email, subject, content, false);

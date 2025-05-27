@@ -41,9 +41,9 @@ public class MultiPersonConferenceController {
     }
     //多人会议登录
     @PostMapping("/login")
-    public ResponseResult<String> login(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
+    public ResponseResult<MultiPersonConferenceUserDTO> login(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
         MultiPersonConferenceUser multiPersonConferenceUser = ConversionMultiPersonConferenceUserUtil.convertToVo(multiPersonConferenceUserDTO);
-        String token = multiPersonConferenceService.login(multiPersonConferenceUser);
+        MultiPersonConferenceUserDTO token = multiPersonConferenceService.login(multiPersonConferenceUser,multiPersonConferenceUserDTO);
         return ResponseResult.success(token);
     }
     //多人会议登出
@@ -63,5 +63,14 @@ public class MultiPersonConferenceController {
     public ResponseResult<String> book(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
         String book = multiPersonConferenceService.book(multiPersonConferenceUserMeetingDateDTO);
         return ResponseResult.success(book);
+    }
+    //用户取消预约会议日期
+    public ResponseResult<String> cancelBook(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        return null;
+    }
+    //用户查看预约会议日期
+    public ResponseResult<String> checkBook(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+
+        return null;
     }
 }

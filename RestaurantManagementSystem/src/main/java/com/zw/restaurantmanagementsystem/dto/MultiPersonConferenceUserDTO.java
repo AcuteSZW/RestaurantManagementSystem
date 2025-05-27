@@ -38,6 +38,8 @@ public class MultiPersonConferenceUserDTO {
     // 发送邮件类型 1.注册 2.登录 3.找回密码
     private String sendType;
 
+    private String token;
+
     // 构造函数中初始化 UUID
     public MultiPersonConferenceUserDTO() {
         this.uuid = UUID.randomUUID().toString();
