@@ -19,6 +19,9 @@ public final class ExceptionUtil {
         //password错误
         public static final String PASSWORD_ERROR = "password error";
         public static final String SEND_TYPE_ERROR = "send error";
+        public static final String VERIFICATION_CODE_NOT_NULL = "Verification Code is not null";
+        public static final String VERIFICATION_CODE_ERROR = "Verification Code error";
+        public static final String VERIFICATION_TYPE_ERROR = "Verification Type error";
     }
 
     // 系统通用异常消息

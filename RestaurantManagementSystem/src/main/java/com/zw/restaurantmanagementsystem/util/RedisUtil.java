@@ -80,6 +80,19 @@ public class RedisUtil {
         return cleanValue;
     }
 
+    /**
+     * 获取缓存值，并尝试反序列化为JSON对象
+     * @param key
+     * @return
+     */
+    public <T> T getJson(String key, Class<T> clazz) {
+        String json = stringRedisTemplate.opsForValue().get(key);
+        try {
+            return objectMapper.readValue(json, clazz);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to deserialize object", e);
+        }
+    }
 
     /**
      * 删除缓存

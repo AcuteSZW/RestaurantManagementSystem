@@ -1,5 +1,7 @@
 package com.zw.restaurantmanagementsystem.controller;
 
+import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.StrUtil;
 import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserDTO;
 import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserMeetingDateDTO;
 import com.zw.restaurantmanagementsystem.service.MultiPersonConferenceService;
@@ -8,10 +10,7 @@ import com.zw.restaurantmanagementsystem.util.ResponseResult;
 import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 多人会议
@@ -26,6 +25,10 @@ public class MultiPersonConferenceController {
     @Autowired
     private MultiPersonConferenceService multiPersonConferenceService;
 
+    @GetMapping("/helloworld")
+    public ResponseResult<String> helloworld() {
+        return ResponseResult.success("helloworld");
+    }
     //多人会议注册
     @PostMapping("/register")
     public ResponseResult<String> register(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
@@ -39,6 +42,13 @@ public class MultiPersonConferenceController {
         String message = multiPersonConferenceService.sendEmail(multiPersonConferenceUserDTO);
         return ResponseResult.success(message);
     }
+
+    @PostMapping("/check-email")
+    public ResponseResult<String> checkEmail(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
+        String message = multiPersonConferenceService.checkEmail(multiPersonConferenceUserDTO);
+        return ResponseResult.success(message);
+    }
+
     //多人会议登录
     @PostMapping("/login")
     public ResponseResult<MultiPersonConferenceUserDTO> login(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
@@ -51,8 +61,13 @@ public class MultiPersonConferenceController {
         return null;
     }
     //多人会议查询
-    public ResponseResult<String> search(String username) {
-        return null;
+    @PostMapping("/search-book")
+    public ResponseResult<String> search(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        ResponseResult<String> getResult = getResult(multiPersonConferenceUserMeetingDateDTO);
+        if (getResult != null){ return getResult;}
+        if (multiPersonConferenceUserMeetingDateDTO.getMeetingDates().size()>2){ return ResponseResult.error(600, "最多只能选择2个日期"); }
+        String s = multiPersonConferenceService.searchBook(multiPersonConferenceUserMeetingDateDTO);
+        return ResponseResult.success(s);
     }
     //多人会议添加
     public ResponseResult<String> add(String username, String password) {
@@ -65,9 +80,27 @@ public class MultiPersonConferenceController {
         return ResponseResult.success(book);
     }
     //用户取消预约会议日期
+    @PostMapping("/cancel-book")
     public ResponseResult<String> cancelBook(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        ResponseResult<String> getResult = getResult(multiPersonConferenceUserMeetingDateDTO);
+        if (getResult != null){ return getResult;}
+        String s = multiPersonConferenceService.cancelBook(multiPersonConferenceUserMeetingDateDTO);
+        return ResponseResult.success(s);
+    }
+
+    private static ResponseResult<String> getResult(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        if (ArrayUtil.isEmpty(multiPersonConferenceUserMeetingDateDTO.getMeetingDates())) {
+            return ResponseResult.error(600, "请选择日期");
+        }
+        if (StrUtil.isBlank(multiPersonConferenceUserMeetingDateDTO.getUserUuid())){
+            return ResponseResult.error(600, "请输入用户编号");
+        }
+        if (multiPersonConferenceUserMeetingDateDTO.getMeetingDates().size() > 1000){
+            return ResponseResult.error(600, "最多只能选择1000个日期");
+        }
         return null;
     }
+
     //用户查看预约会议日期
     public ResponseResult<String> checkBook(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
 

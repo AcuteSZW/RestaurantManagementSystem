@@ -1,11 +1,13 @@
 package com.zw.restaurantmanagementsystem.service;
 
 import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.mail.MailUtil;
+import cn.hutool.json.JSON;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -26,9 +28,10 @@ import org.apache.ibatis.executor.BatchResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 多人会议服务
@@ -74,6 +77,30 @@ public class MultiPersonConferenceService {
             case "3" -> sendTypeEmail(multiPersonConferenceUserDTO, MailType.PASSWORD_RESET,"3");
             default -> ExceptionUtil.UserMessage.SEND_TYPE_ERROR;
         };
+    }
+
+    public String checkEmail(MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
+        //参数校验
+        if (StringUtils.isBlank(multiPersonConferenceUserDTO.getEmail())) {
+            throw new BusinessException(ExceptionUtil.UserMessage.EMAIL_NOT_NULL);
+        }
+        if (StringUtils.isBlank(multiPersonConferenceUserDTO.getVerificationCode())) {
+            throw new BusinessException(ExceptionUtil.UserMessage.VERIFICATION_CODE_NOT_NULL);
+        }
+        Map json = redisUtil.getJson(multiPersonConferenceUserDTO.getEmail(), HashMap.class);
+        if (MapUtil.isEmpty(json)) {
+            throw new BusinessException(ExceptionUtil.UserMessage.VERIFICATION_CODE_ERROR);
+        }
+        String type = (String) json.get("type");
+        String verificationCode = (String) json.get("code");
+        if(!StrUtil.equals(type,multiPersonConferenceUserDTO.getSendType())){
+            throw new RuntimeException(ExceptionUtil.UserMessage.VERIFICATION_TYPE_ERROR);
+        }
+        if (StrUtil.equals(verificationCode,multiPersonConferenceUserDTO.getVerificationCode())){
+            return "验证成功";
+        }
+
+        return "验证失败";
     }
 
     /**
@@ -130,15 +157,12 @@ public class MultiPersonConferenceService {
 
     //用户预约会议日期
     public String book(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
-        if (ArrayUtil.isEmpty(multiPersonConferenceUserMeetingDateDTO.getMeetingDates())) {
-            return "请选择日期";
-        }
-        if (StrUtil.isBlank(multiPersonConferenceUserMeetingDateDTO.getUserUuid())){
-            return "请选择用户";
-        }
-        if(multiPersonConferenceUserMeetingDateDTO.getMeetingDates().size() > 1000){
-            return "最多只能选择1000个日期";
-        }
+
+        LambdaQueryWrapper<MultiPersonConferenceUserMeetingDate> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(MultiPersonConferenceUserMeetingDate::getUserUuid,multiPersonConferenceUserMeetingDateDTO.getUserUuid())
+                .in(MultiPersonConferenceUserMeetingDate::getMeetingDate,multiPersonConferenceUserMeetingDateDTO.getMeetingDates());
+        List<MultiPersonConferenceUserMeetingDate> meetingDateList = meetingDateMapper.selectList(wrapper);
+
         //插入数据库
         List<MultiPersonConferenceUserMeetingDate> meetingDates = multiPersonConferenceUserMeetingDateDTO.getMeetingDates().stream().map(date -> {
             MultiPersonConferenceUserMeetingDate meetingDate = new MultiPersonConferenceUserMeetingDate();
@@ -148,9 +172,38 @@ public class MultiPersonConferenceService {
 
             return meetingDate;
         }).toList();
+        //剔除数据库存在的日期然后才写入
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-        meetingDateMapper.insert(meetingDates);
+        Set<String> existingKeys = meetingDateList.stream()
+                .map(item -> item.getUserUuid() + ":" + sdf.format(item.getMeetingDate()))
+                .collect(Collectors.toSet());
+
+        List<MultiPersonConferenceUserMeetingDate> filtered = meetingDates.stream()
+                .filter(item -> {
+                    String dateStr = sdf.format(item.getMeetingDate());
+                    return !existingKeys.contains(item.getUserUuid() + ":" + dateStr);
+                }).collect(Collectors.toList());
+
+        meetingDateMapper.insert(filtered);
         return "预定成功";
+    }
+
+    public String searchBook(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        LambdaQueryWrapper<MultiPersonConferenceUserMeetingDate> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(MultiPersonConferenceUserMeetingDate::getUserUuid,multiPersonConferenceUserMeetingDateDTO.getUserUuid())
+                .between(MultiPersonConferenceUserMeetingDate::getMeetingDate, multiPersonConferenceUserMeetingDateDTO.getStartDate(), multiPersonConferenceUserMeetingDateDTO.getEndDate());
+        List<MultiPersonConferenceUserMeetingDate> multiPersonConferenceUserMeetingDates = meetingDateMapper.selectList(wrapper);
+
+        return "成功取消";
+    }
+
+    public String cancelBook(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        LambdaQueryWrapper<MultiPersonConferenceUserMeetingDate> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(MultiPersonConferenceUserMeetingDate::getUserUuid,multiPersonConferenceUserMeetingDateDTO.getUserUuid())
+                        .in(MultiPersonConferenceUserMeetingDate::getMeetingDate, multiPersonConferenceUserMeetingDateDTO.getMeetingDates());
+        int delete = meetingDateMapper.delete(wrapper);
+        return "成功取消"+delete;
     }
 
     /**
@@ -184,7 +237,7 @@ public class MultiPersonConferenceService {
         //创建一个json对象里面包含code和type
         JSONObject set = JSONUtil.createObj().set("code", code).set("type", type);
         // 存储到 Redis
-        redisUtil.setEx(email, set, 5, TimeUnit.MINUTES);
+        redisUtil.setEx(email, set, 500, TimeUnit.MINUTES);
 
         // 发送邮件
         MailUtil.send(email, subject, content, false);

@@ -40,6 +40,8 @@ public class MultiPersonConferenceUserDTO {
 
     private String token;
 
+    private String verificationCode;
+
     // 构造函数中初始化 UUID
     public MultiPersonConferenceUserDTO() {
         this.uuid = UUID.randomUUID().toString();

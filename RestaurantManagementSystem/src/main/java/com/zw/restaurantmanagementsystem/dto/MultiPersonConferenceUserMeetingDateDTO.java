@@ -2,7 +2,7 @@ package com.zw.restaurantmanagementsystem.dto;
 
 import lombok.Data;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.List;
 
 /**
@@ -12,4 +12,6 @@ import java.util.List;
 public class MultiPersonConferenceUserMeetingDateDTO {
     private String userUuid;
     private List<Date> meetingDates;
+    private Date startDate;
+    private Date endDate;
 }
