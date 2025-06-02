@@ -19,10 +19,7 @@ import com.zw.restaurantmanagementsystem.dto.LoginDTO;
 import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserDTO;
 import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserMeetingDateDTO;
 import com.zw.restaurantmanagementsystem.util.*;
-import com.zw.restaurantmanagementsystem.vo.MailType;
-import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUser;
-import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUserMeetingDate;
-import com.zw.restaurantmanagementsystem.vo.User;
+import com.zw.restaurantmanagementsystem.vo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.executor.BatchResult;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -157,6 +154,12 @@ public class MultiPersonConferenceService {
 
     //用户预约会议日期
     public String book(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        LambdaQueryWrapper<MultiPersonConferenceUser> multiPersonConferenceUserLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        multiPersonConferenceUserLambdaQueryWrapper.eq(MultiPersonConferenceUser::getUuid, multiPersonConferenceUserMeetingDateDTO.getUserUuid());
+        boolean exists = multiPersonConferenceUserMapper.exists(multiPersonConferenceUserLambdaQueryWrapper);
+         if (!exists) {
+            return ExceptionUtil.UserMessage.USER_NOT_FOUND;
+        }
 
         LambdaQueryWrapper<MultiPersonConferenceUserMeetingDate> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(MultiPersonConferenceUserMeetingDate::getUserUuid,multiPersonConferenceUserMeetingDateDTO.getUserUuid())
@@ -189,13 +192,8 @@ public class MultiPersonConferenceService {
         return "预定成功";
     }
 
-    public String searchBook(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
-        LambdaQueryWrapper<MultiPersonConferenceUserMeetingDate> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(MultiPersonConferenceUserMeetingDate::getUserUuid,multiPersonConferenceUserMeetingDateDTO.getUserUuid())
-                .between(MultiPersonConferenceUserMeetingDate::getMeetingDate, multiPersonConferenceUserMeetingDateDTO.getStartDate(), multiPersonConferenceUserMeetingDateDTO.getEndDate());
-        List<MultiPersonConferenceUserMeetingDate> multiPersonConferenceUserMeetingDates = meetingDateMapper.selectList(wrapper);
-
-        return "成功取消";
+    public List<MeetingStatsVO> searchBook(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        return meetingDateMapper.selectByDates(multiPersonConferenceUserMeetingDateDTO);
     }
 
     public String cancelBook(MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {

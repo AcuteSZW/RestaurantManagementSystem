@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zw.restaurantmanagementsystem.dao.MultiPersonConferenceUserMeetingDateMapper">
+    <select id="selectByDates" resultType="com.zw.restaurantmanagementsystem.vo.MeetingStatsVO" parameterType="com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserMeetingDateDTO">
+        SELECT
+        d.meeting_date AS date,
+        COALESCE(u.user_count, 0) AS currentUser,
+        COALESCE(t.total_count, 0) AS num
+        FROM (
+        WITH RECURSIVE seq(n) AS (
+        SELECT 0
+        UNION ALL
+        SELECT n + 1 FROM seq WHERE n &lt; 30
+        )
+        SELECT DATE(#{startDate}) + INTERVAL n DAY AS meeting_date
+        FROM seq
+        ) AS d
+        LEFT JOIN (
+        SELECT meeting_date, COUNT(*) AS user_count
+        FROM multi_person_conference_user_meeting_date
+        WHERE user_uuid = #{userUuid}
+        AND meeting_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY meeting_date
+        ) AS u ON d.meeting_date = u.meeting_date
+        LEFT JOIN (
+        SELECT meeting_date, COUNT(*) AS total_count
+        FROM multi_person_conference_user_meeting_date
+        WHERE meeting_date BETWEEN #{startDate} AND #{endDate}
+        GROUP BY meeting_date
+        ) AS t ON d.meeting_date = t.meeting_date
+        ORDER BY d.meeting_date
+    </select>
+</mapper>

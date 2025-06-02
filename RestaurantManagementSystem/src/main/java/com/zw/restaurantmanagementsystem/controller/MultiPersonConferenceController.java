@@ -7,10 +7,14 @@ import com.zw.restaurantmanagementsystem.dto.MultiPersonConferenceUserMeetingDat
 import com.zw.restaurantmanagementsystem.service.MultiPersonConferenceService;
 import com.zw.restaurantmanagementsystem.util.ConversionMultiPersonConferenceUserUtil;
 import com.zw.restaurantmanagementsystem.util.ResponseResult;
+import com.zw.restaurantmanagementsystem.vo.MeetingStatsVO;
 import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUser;
+import com.zw.restaurantmanagementsystem.vo.MultiPersonConferenceUserMeetingDate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 多人会议
@@ -29,6 +33,7 @@ public class MultiPersonConferenceController {
     public ResponseResult<String> helloworld() {
         return ResponseResult.success("helloworld");
     }
+
     //多人会议注册
     @PostMapping("/register")
     public ResponseResult<String> register(@RequestBody MultiPersonConferenceUserDTO multiPersonConferenceUserDTO) {
@@ -62,11 +67,15 @@ public class MultiPersonConferenceController {
     }
     //多人会议查询
     @PostMapping("/search-book")
-    public ResponseResult<String> search(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
-        ResponseResult<String> getResult = getResult(multiPersonConferenceUserMeetingDateDTO);
-        if (getResult != null){ return getResult;}
-        if (multiPersonConferenceUserMeetingDateDTO.getMeetingDates().size()>2){ return ResponseResult.error(600, "最多只能选择2个日期"); }
-        String s = multiPersonConferenceService.searchBook(multiPersonConferenceUserMeetingDateDTO);
+    public ResponseResult<List<MeetingStatsVO>> search(@RequestBody MultiPersonConferenceUserMeetingDateDTO multiPersonConferenceUserMeetingDateDTO) {
+        getResult(multiPersonConferenceUserMeetingDateDTO);
+        if (multiPersonConferenceUserMeetingDateDTO.getStartDate() == null || multiPersonConferenceUserMeetingDateDTO.getEndDate() == null){
+            return ResponseResult.error(600, "请选择日期");
+        }
+        if (multiPersonConferenceUserMeetingDateDTO.getStartDate().after(multiPersonConferenceUserMeetingDateDTO.getEndDate())) {
+            return ResponseResult.error(600, "开始日期不能为空");
+        }
+        List<MeetingStatsVO> s = multiPersonConferenceService.searchBook(multiPersonConferenceUserMeetingDateDTO);
         return ResponseResult.success(s);
     }
     //多人会议添加
